@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Drenagem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h1 class="text-2xl font-bold text-center mb-6 text-blue-600">Sistema de Drenagem</h1>
+            <h2 class="text-xl font-semibold text-center mb-4">Login do Administrador</h2>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                    <input type="email" id="loginEmail" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Senha:</label>
+                    <input type="password" id="loginPassword" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Entrar
+                </button>
+            </form>
+            <div id="loginError" class="mt-4 text-red-600 text-sm hidden"></div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Sistema de Drenagem</h1>
+                <div class="flex items-center space-x-4">
+                    <span id="adminName" class="text-sm"></span>
+                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-700 px-4 py-2 rounded text-sm">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-blue-500 text-white p-4">
+            <div class="container mx-auto">
+                <div class="flex flex-wrap space-x-6">
+                    <button class="nav-btn hover:underline" data-section="cadastroAdmin">Cadastrar Administrador</button>
+                    <button class="nav-btn hover:underline" data-section="cadastroCliente">Cadastrar Cliente</button>
+                    <button class="nav-btn hover:underline" data-section="cadastroExecutor">Cadastrar Executor</button>
+                    <button class="nav-btn hover:underline" data-section="cadastroDrenagem">Cadastrar Drenagem</button>
+                    <button class="nav-btn hover:underline" data-section="relatorio">Gerar Relatório</button>
+                    <button class="nav-btn hover:underline" data-section="logs">Visualizar Logs</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-6">
+            <!-- Cadastro de Administrador -->
+            <section id="cadastroAdmin" class="content-section hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Cadastrar Administrador</h2>
+                    <form id="adminForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+                            <input type="text" name="nome" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                            <input type="email" name="email" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Senha:</label>
+                            <input type="password" name="senha" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Confirmar Senha:</label>
+                            <input type="password" name="confirmarSenha" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Cadastrar Administrador
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Cadastro de Cliente -->
+            <section id="cadastroCliente" class="content-section hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Cadastrar Cliente</h2>
+                    <form id="clienteForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+                            <input type="text" name="nome" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">CPF/CNPJ:</label>
+                            <input type="text" name="documento" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Telefone:</label>
+                            <input type="tel" name="telefone" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                            <input type="email" name="email" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Endereço:</label>
+                            <textarea name="endereco" required rows="3" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Cadastrar Cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Cadastro de Executor -->
+            <section id="cadastroExecutor" class="content-section hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Cadastrar Executor</h2>
+                    <form id="executorForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+                            <input type="text" name="nome" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">CPF:</label>
+                            <input type="text" name="cpf" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Telefone:</label>
+                            <input type="tel" name="telefone" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Especialidade:</label>
+                            <select name="especialidade" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Selecione...</option>
+                                <option value="desentupimento">Desentupimento</option>
+                                <option value="limpeza">Limpeza de Esgoto</option>
+                                <option value="instalacao">Instalação de Tubulação</option>
+                                <option value="manutencao">Manutenção Preventiva</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Certificações:</label>
+                            <input type="text" name="certificacoes" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Anos de Experiência:</label>
+                            <input type="number" name="experiencia" min="0" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Cadastrar Executor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Cadastro de Drenagem -->
+            <section id="cadastroDrenagem" class="content-section hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Cadastrar Drenagem</h2>
+                    <form id="drenagemForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Cliente:</label>
+                            <select name="clienteId" required id="clienteSelect" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Carregando clientes...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Executor:</label>
+                            <select name="executorId" required id="executorSelect" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Carregando executores...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Tipo de Serviço:</label>
+                            <select name="tipoServico" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Selecione...</option>
+                                <option value="desentupimento">Desentupimento</option>
+                                <option value="limpeza">Limpeza de Esgoto</option>
+                                <option value="instalacao">Instalação de Tubulação</option>
+                                <option value="manutencao">Manutenção Preventiva</option>
+                                <option value="emergencia">Atendimento de Emergência</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Data do Serviço:</label>
+                            <input type="datetime-local" name="dataServico" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
+                            <select name="status" required class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="agendado">Agendado</option>
+                                <option value="em_andamento">Em Andamento</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Valor (R$):</label>
+                            <input type="number" name="valor" step="0.01" min="0" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Descrição do Problema:</label>
+                            <textarea name="descricao" required rows="3" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Observações:</label>
+                            <textarea name="observacoes" rows="2" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Cadastrar Drenagem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Relatório -->
+            <section id="relatorio" class="content-section hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Gerar Relatório de Drenagem</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Data Inicial:</label>
+                            <input type="date" id="dataInicial" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Data Final:</label>
+                            <input type="date" id="dataFinal" class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="gerarRelatorioBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Gerar Relatório
+                            </button>
+                        </div>
+                    </div>
+                    <div id="relatorioContent" class="hidden">
+                        <h3 class="text-lg font-bold mb-4">Relatório de Drenagens</h3>
+                        <div id="relatorioStats" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-100 p-4 rounded">
+                                <h4 class="font-bold text-blue-800">Total de Serviços</h4>
+                                <p id="totalServicos" class="text-2xl font-bold text-blue-600">0</p>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded">
+                                <h4 class="font-bold text-green-800">Concluídos</h4>
+                                <p id="servicosConcluidos" class="text-2xl font-bold text-green-600">0</p>
+                            </div>
+                            <div class="bg-yellow-100 p-4 rounded">
+                                <h4 class="font-bold text-yellow-800">Em Andamento</h4>
+                                <p id="servicosAndamento" class="text-2xl font-bold text-yellow-600">0</p>
+                            </div>
+                            <div class="bg-red-100 p-4 rounded">
+                                <h4 class="font-bold text-red-800">Receita Total</h4>
+                                <p id="receitaTotal" class="text-2xl font-bold text-red-600">R$ 0,00</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Executor</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serviço</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="relatorioTabela" class="divide-y divide-gray-200">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs -->
+            <section id="logs" class="content-section hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Visualizar Logs do Sistema</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex space-x-4">
+                            <select id="logFilter" class="px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                                <option value="">Todos os Logs</option>
+                                <option value="admin">Administrador</option>
+                                <option value="cliente">Cliente</option>
+                                <option value="executor">Executor</option>
+                                <option value="drenagem">Drenagem</option>
+                                <option value="login">Login</option>
+                                <option value="error">Erro</option>
+                            </select>
+                            <button id="refreshLogs" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Atualizar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <div id="logsContainer" class="max-h-96 overflow-y-auto border rounded p-4 bg-gray-50">
+                            <!-- Logs will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-2 text-center">Carregando...</p>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        // Firebase Configuration (Replace with your actual config)
+        const firebaseConfig = {
+            apiKey: "demo-api-key",
+            authDomain: "drenagem-demo.firebaseapp.com",
+            projectId: "drenagem-demo",
+            storageBucket: "drenagem-demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:demo123456"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Global variables
+        let currentUser = null;
+
+        // Utility Functions
+        function showMessage(message, type = 'success') {
+            const messageContainer = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `p-4 mb-4 rounded-lg text-white fade-in ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            messageDiv.textContent = message;
+            messageContainer.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        function showLoading(show = true) {
+            document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+        }
+
+        function logActivity(activity, details = '') {
+            const log = {
+                timestamp: new Date(),
+                user: currentUser?.email || 'Sistema',
+                activity: activity,
+                details: details
+            };
+            
+            db.collection('logs').add(log).catch(console.error);
+        }
+
+        function logoutAdmin(reason = 'Sessão encerrada automaticamente') {
+            logActivity('logout', reason);
+            auth.signOut();
+            currentUser = null;
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            showMessage(`Sessão encerrada: ${reason}`, 'info');
+        }
+
+        // Authentication Functions
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showLoading(true);
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                logActivity('login', 'Login realizado com sucesso');
+                showMessage('Login realizado com sucesso!');
+            } catch (error) {
+                document.getElementById('loginError').textContent = 'Email ou senha incorretos';
+                document.getElementById('loginError').classList.remove('hidden');
+                logActivity('login_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Auth state observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('adminName').textContent = `Admin: ${user.email}`;
+                loadClientes();
+                loadExecutores();
+            } else {
+                currentUser = null;
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+            }
+        });
+
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            logoutAdmin('Logout manual');
+        });
+
+        // Navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const section = btn.dataset.section;
+                
+                // Hide all sections
+                document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+                
+                // Show selected section
+                document.getElementById(section).classList.remove('hidden');
+            });
+        });
+
+        // Load data functions
+        async function loadClientes() {
+            try {
+                const snapshot = await db.collection('clientes').get();
+                const select = document.getElementById('clienteSelect');
+                select.innerHTML = '<option value="">Selecione um cliente...</option>';
+                
+                snapshot.forEach(doc => {
+                    const cliente = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = cliente.nome;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar clientes:', error);
+            }
+        }
+
+        async function loadExecutores() {
+            try {
+                const snapshot = await db.collection('executores').get();
+                const select = document.getElementById('executorSelect');
+                select.innerHTML = '<option value="">Selecione um executor...</option>';
+                
+                snapshot.forEach(doc => {
+                    const executor = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${executor.nome} - ${executor.especialidade}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar executores:', error);
+            }
+        }
+
+        // Form submissions
+        document.getElementById('adminForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            if (data.senha !== data.confirmarSenha) {
+                showMessage('As senhas não coincidem', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            try {
+                await auth.createUserWithEmailAndPassword(data.email, data.senha);
+                await db.collection('administradores').add({
+                    nome: data.nome,
+                    email: data.email,
+                    criadoEm: new Date()
+                });
+                
+                logActivity('admin_created', `Administrador ${data.nome} cadastrado`);
+                showMessage('Administrador cadastrado com sucesso!');
+                e.target.reset();
+                
+                // Auto logout after admin registration
+                setTimeout(() => {
+                    logoutAdmin('Sessão encerrada após cadastro de administrador');
+                }, 2000);
+                
+            } catch (error) {
+                showMessage('Erro ao cadastrar administrador: ' + error.message, 'error');
+                logActivity('admin_creation_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        document.getElementById('clienteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showLoading(true);
+            try {
+                await db.collection('clientes').add({
+                    ...data,
+                    criadoEm: new Date()
+                });
+                
+                logActivity('client_created', `Cliente ${data.nome} cadastrado`);
+                showMessage('Cliente cadastrado com sucesso!');
+                e.target.reset();
+                loadClientes();
+            } catch (error) {
+                showMessage('Erro ao cadastrar cliente: ' + error.message, 'error');
+                logActivity('client_creation_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        document.getElementById('executorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showLoading(true);
+            try {
+                await db.collection('executores').add({
+                    ...data,
+                    criadoEm: new Date()
+                });
+                
+                logActivity('executor_created', `Executor ${data.nome} cadastrado`);
+                showMessage('Executor cadastrado com sucesso!');
+                e.target.reset();
+                loadExecutores();
+            } catch (error) {
+                showMessage('Erro ao cadastrar executor: ' + error.message, 'error');
+                logActivity('executor_creation_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        document.getElementById('drenagemForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            showLoading(true);
+            try {
+                await db.collection('drenagens').add({
+                    ...data,
+                    dataServico: new Date(data.dataServico),
+                    valor: parseFloat(data.valor) || 0,
+                    criadoEm: new Date()
+                });
+                
+                logActivity('drainage_created', `Drenagem cadastrada para cliente ${data.clienteId}`);
+                showMessage('Drenagem cadastrada com sucesso!');
+                e.target.reset();
+            } catch (error) {
+                showMessage('Erro ao cadastrar drenagem: ' + error.message, 'error');
+                logActivity('drainage_creation_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Report generation
+        document.getElementById('gerarRelatorioBtn').addEventListener('click', async () => {
+            const dataInicial = document.getElementById('dataInicial').value;
+            const dataFinal = document.getElementById('dataFinal').value;
+            
+            if (!dataInicial || !dataFinal) {
+                showMessage('Selecione as datas inicial e final', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            try {
+                let query = db.collection('drenagens');
+                
+                if (dataInicial && dataFinal) {
+                    query = query.where('dataServico', '>=', new Date(dataInicial))
+                                 .where('dataServico', '<=', new Date(dataFinal + 'T23:59:59'));
+                }
+                
+                const snapshot = await query.get();
+                const drenagens = [];
+                let totalReceita = 0;
+                let concluidos = 0;
+                let emAndamento = 0;
+                
+                for (const doc of snapshot.docs) {
+                    const drenagem = doc.data();
+                    
+                    // Get client and executor names
+                    const cliente = await db.collection('clientes').doc(drenagem.clienteId).get();
+                    const executor = await db.collection('executores').doc(drenagem.executorId).get();
+                    
+                    drenagem.clienteNome = cliente.exists ? cliente.data().nome : 'Cliente não encontrado';
+                    drenagem.executorNome = executor.exists ? executor.data().nome : 'Executor não encontrado';
+                    
+                    drenagens.push(drenagem);
+                    totalReceita += drenagem.valor || 0;
+                    
+                    if (drenagem.status === 'concluido') concluidos++;
+                    if (drenagem.status === 'em_andamento') emAndamento++;
+                }
+                
+                // Update stats
+                document.getElementById('totalServicos').textContent = drenagens.length;
+                document.getElementById('servicosConcluidos').textContent = concluidos;
+                document.getElementById('servicosAndamento').textContent = emAndamento;
+                document.getElementById('receitaTotal').textContent = new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(totalReceita);
+                
+                // Update table
+                const tbody = document.getElementById('relatorioTabela');
+                tbody.innerHTML = '';
+                
+                drenagens.forEach(drenagem => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${drenagem.clienteNome}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${drenagem.executorNome}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${drenagem.tipoServico}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${new Date(drenagem.dataServico.seconds * 1000).toLocaleDateString('pt-BR')}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs rounded-full ${getStatusColor(drenagem.status)}">
+                                ${getStatusLabel(drenagem.status)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">${new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(drenagem.valor || 0)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                document.getElementById('relatorioContent').classList.remove('hidden');
+                logActivity('report_generated', `Relatório gerado para período ${dataInicial} a ${dataFinal}`);
+                showMessage('Relatório gerado com sucesso!');
+                
+                // Auto logout after report generation
+                setTimeout(() => {
+                    logoutAdmin('Sessão encerrada após geração de relatório');
+                }, 3000);
+                
+            } catch (error) {
+                showMessage('Erro ao gerar relatório: ' + error.message, 'error');
+                logActivity('report_generation_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'concluido': return 'bg-green-100 text-green-800';
+                case 'em_andamento': return 'bg-yellow-100 text-yellow-800';
+                case 'agendado': return 'bg-blue-100 text-blue-800';
+                case 'cancelado': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getStatusLabel(status) {
+            switch (status) {
+                case 'concluido': return 'Concluído';
+                case 'em_andamento': return 'Em Andamento';
+                case 'agendado': return 'Agendado';
+                case 'cancelado': return 'Cancelado';
+                default: return 'Desconhecido';
+            }
+        }
+
+        // Logs functionality
+        document.getElementById('refreshLogs').addEventListener('click', loadLogs);
+
+        async function loadLogs() {
+            const filter = document.getElementById('logFilter').value;
+            const container = document.getElementById('logsContainer');
+            
+            showLoading(true);
+            try {
+                let query = db.collection('logs').orderBy('timestamp', 'desc').limit(100);
+                
+                if (filter) {
+                    query = query.where('activity', '>=', filter).where('activity', '<=', filter + '\uf8ff');
+                }
+                
+                const snapshot = await query.get();
+                container.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const log = doc.data();
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'border-b border-gray-200 py-2';
+                    logDiv.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-bold text-sm">${log.activity}</span>
+                                <span class="text-gray-600 text-sm ml-2">${log.user}</span>
+                            </div>
+                            <span class="text-gray-500 text-xs">${new Date(log.timestamp.seconds * 1000).toLocaleString('pt-BR')}</span>
+                        </div>
+                        ${log.details ? `<div class="text-sm text-gray-700 mt-1">${log.details}</div>` : ''}
+                    `;
+                    container.appendChild(logDiv);
+                });
+                
+                logActivity('logs_viewed', `Logs visualizados com filtro: ${filter || 'todos'}`);
+                showMessage('Logs carregados com sucesso!');
+                
+                // Auto logout after viewing logs
+                setTimeout(() => {
+                    logoutAdmin('Sessão encerrada após visualização de logs');
+                }, 3000);
+                
+            } catch (error) {
+                showMessage('Erro ao carregar logs: ' + error.message, 'error');
+                logActivity('logs_loading_error', error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Initialize default section (first section visible)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show cadastroCliente as default section when logged in
+            if (currentUser) {
+                document.getElementById('cadastroCliente').classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
